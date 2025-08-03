@@ -15,8 +15,8 @@ Docker is a platform for containerization, allowing you to package applications 
 ### Docker Lifecycle
 1. **Build an Image**: Use a `Dockerfile` to define the environment (e.g., base image, dependencies, code). Run `docker build` to create the image.
 2. **Store the Image**: Images are stored locally in Docker’s storage (e.g., `/var/lib/docker` on Linux). Optionally, push to a registry like Docker Hub.
-3. **Run a Container**: Use `docker run` to create and start a container from an image. The container executes the code and may create files (e.g., model weights).
-4. **Manage Containers**: Containers stop when their main process ends. You can delete them (`docker rm`), restart them (`docker start`), or auto-delete after execution (`--rm`).
+3. **Run a Container**: Use `docker run` to create and start a container from an image. The container executes the code and may create files (e.g., model weights). Without Volume Mounts `-v`, outputs are stored in the container’s `/app/output` and are lost with `--rm` or require manual extraction from a stopped container. With Volume Mounts `-v`, outputs are saved directly to the host’s `./output` directory and persist after the container is deleted.
+4. **Manage Containers**: Containers stop when their main process ends. You can delete them (`docker rm`), restart them (`docker start`), or auto-delete after execution (`--rm`). 
 5. **Share Images**: Push images to a registry for use on other machines (e.g., HPC) or export/import as `.tar` files.
 
 ## Part 2: Why Use Docker for Machine Learning?
@@ -103,9 +103,11 @@ CMD ["python", "train.py"]
 - **COPY train.py /app/train.py**:
   - Copies the training script to `/app/train.py` in the image.
 - **COPY data /app/data**:
-  - Copies the `data` directory (e.g., `train.csv`, `test.csv`) to `/app/data`.
+  - Copies the `data` directory (e.g., `train.csv`, `test.csv`) to `/app/data` in the image.
+  - This is only suggest when the dataset is small. For large datasets, avoid `COPY` and use volume mounts to access datasets stored on the host.
 - **CMD ["python", "train.py"]**:
   - Specifies the default command to run when a container starts.
+  - The `CMD` instruction in the Dockerfile does not execute during the image build process.
   - Executes `python train.py` in the container, starting the training process.
   - Doesn’t run during image build; it’s metadata for containers.
 
@@ -136,10 +138,12 @@ Below are common Docker commands with examples tied to the project structure abo
 - **Example**:
   ```bash
   docker run --rm -v $(pwd)/output:/app/output --gpus all ml-transformer
+  docker run --rm -v $(pwd)/data:/app/data -v $(pwd)/output:/app/output --gpus all flan-t5-qa
   ```
   - Creates a container from `ml-transformer`.
   - `--rm`: Deletes the container after execution.
   - `-v $(pwd)/output:/app/output`: Mounts the local `output` folder to `/app/output` in the container to save model weights/logs.
+  - `-v $(pwd)/data:/app/data`: Mounts local `./data` (containing train.jsonl, validation.jsonl) to `/app/data` in the container. This keeps the image lightweight when the dataset is large. 
   - `--gpus all`: Enables GPU access for training.
   - Runs `python train.py` (from `CMD`).
 

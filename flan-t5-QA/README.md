@@ -12,8 +12,8 @@ This repository contains a professional setup for fine-tuning the `google/flan-t
 ```
 flan-t5-QA/
 ├── data/
-│   ├── train.jsonl       # SQuAD v1.1 training data (downloaded by train.py)
-│   ├── validation.jsonl  # SQuAD v1.1 validation data (downloaded by train.py)
+│   ├── train.jsonl       # SQuAD v1.1 training data (downloaded when run train.py)
+│   ├── validation.jsonl  # SQuAD v1.1 validation data (downloaded when run train.py)
 ├── output/
 │   ├── model/            # Fine-tuned model weights
 │   ├── logs/             # Training logs
@@ -92,7 +92,7 @@ CMD ["python", "train.py"]
 - **CMD**: Runs `python train.py` when the container starts.
 
 ## Notes
-- The `train.py` script downloads SQuAD v1.1 automatically via the `datasets` library.
+- The `train.py` script downloads SQuAD v1.1 automatically via the `datasets` library. The dataset is downloaded to a temporary cache in the container’s filesystem (managed by the `datasets` library, typically in `/root/.cache/huggingface/datasets`).
 - Training hyperparameters (e.g., batch size, epochs) are set in `train.py` and can be adjusted.
 - For larger models (e.g., `flan-t5-base`), ensure sufficient GPU memory or modify the batch size.
 - To extend the project, add datasets to `./data` and mount them with `-v $(pwd)/data:/app/data`.
